@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Co-Piloto de Tareas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Co-Piloto de Tareas (Demo)</h1>
+
+        <div class="panel">
+            <h2>Paso 1: Crear Datos de Prueba</h2>
+            <p>Esto simulará un usuario que necesita ayuda.</p>
+            
+            <label for="nombre-usuario">Tu Nombre:</label>
+            <input type="text" id="nombre-usuario" value="Ana">
+
+            <label for="nombre-objetivo">Tu Objetivo:</label>
+            <input type="text" id="nombre-objetivo" value="Escribir mi libro">
+
+            <label for="tarea-ayer">Tarea que "Olvidaste" Ayer:</label>
+            <input type="text" id="tarea-ayer" value="Definir personajes">
+
+            <label for="tarea-hoy">Tarea para Hoy:</label>
+            <input type="text" id="tarea-hoy" value="Escribir 500 palabras">
+
+            <button id="btn-crear-datos">Crear Datos de Prueba</button>
+        </div>
+
+        <div class="panel">
+            <h2>Paso 2: Probar el "Cerebro"</h2>
+            <p>Haz clic para que el backend revise tus tareas y genere los mensajes proactivos.</p>
+            <button id="btn-chequear">¡Ejecutar Chequeo Proactivo!</button>
+        </div>
+
+        <div class="panel">
+            <h2>Paso 3: Resultados</h2>
+            <p>Aquí aparecerán los mensajes que te enviaría el Co-Piloto:</p>
+            <div id="resultados">
+                (Esperando ejecución...)
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
