@@ -2,12 +2,14 @@ import os
 import datetime
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS  # <--- 1. IMPORTACIÓN AÑADIDA
 
 # --- CONFIGURACIÓN ---
-# Define la ruta base del proyecto
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
+CORS(app)  # <--- 2. LÍNEA AÑADIDA (habilita CORS para toda la app)
+
 # Configura la base de datos SQLite. Se creará un archivo 'app.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'app.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -33,16 +35,14 @@ class Tarea(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     objetivo_id = db.Column(db.Integer, db.ForeignKey('objetivo.id'), nullable=False)
     descripcion = db.Column(db.String(500), nullable=False)
-    # Usamos DateTime para saber la hora exacta
     fecha_programada = db.Column(db.DateTime, nullable=False)
-    # Estados: 'pendiente', 'completada', 'reprogramada'
     estado = db.Column(db.String(50), default='pendiente')
 
 # --- RUTAS DE LA API (Endpoints) ---
 
 @app.route('/')
 def index():
-    return "¡El backend del Co-Piloto está funcionando!"
+    return "¡El backend del Co-Piloto está funcionando! (CORS HABILITADO)"
 
 # --- API para crear Usuarios, Objetivos y Tareas ---
 
@@ -61,7 +61,6 @@ def crear_usuario():
 def crear_objetivo():
     datos = request.json
     try:
-        # Aquí la IA dividiría el objetivo, por ahora lo creamos simple
         nuevo_objetivo = Objetivo(
             usuario_id=datos['usuario_id'],
             nombre=datos['nombre_objetivo'],
@@ -98,23 +97,19 @@ def completar_tarea(tarea_id):
     return jsonify({'mensaje': f"Tarea '{tarea.descripcion}' completada."})
 
 
-# --- EL CEREBRO PROACTIVO (LO MÁS IMPORTANTE) ---
+# --- EL CEREBRO PROACTIVO ---
 
 def generar_mensaje_proactivo(tarea, usuario, tipo_mensaje):
     """
     Genera los 3 mensajes clave usando plantillas (Escenario 1.5)
     """
     if tipo_mensaje == 'recordatorio':
-        # EJEMPLO 1
         return f"¡Hola {usuario.nombre}! Es hora de tu sesión de '{tarea.descripcion}'. ¡Vamos!"
     
     elif tipo_mensaje == 'replanificar':
-        # EJEMPLO 2
         return f"Hey {usuario.nombre}, vi que ayer no marcaste la tarea '{tarea.descripcion}'. ¿La movemos para hoy a la tarde o la fusionamos con la de mañana?"
     
     elif tipo_mensaje == 'felicitacion':
-        # EJEMPLO 3
-        # (tarea aquí sería una lista de tareas completadas)
         conteo = len(tarea)
         return f"¡Completaste {conteo} tareas esta semana! ¡Excelente progreso en tu objetivo '{tarea[0].objetivo.nombre}'!"
     
@@ -135,7 +130,6 @@ def ejecutar_chequeo_proactivo():
     mensajes_generados = []
 
     # 1. Lógica del Mensaje 1: Recordatorio de Tarea de Hoy
-    # (Busca tareas pendientes para hoy que sean dentro de la próxima hora)
     limite_recordatorio = ahora + datetime.timedelta(hours=1)
     tareas_para_hoy = Tarea.query.join(Objetivo).join(Usuario).filter(
         Tarea.estado == 'pendiente',
@@ -148,7 +142,6 @@ def ejecutar_chequeo_proactivo():
         mensajes_generados.append(f"[SIMULACIÓN DE ENVÍO] Para {tarea.objetivo.usuario.email}: {mensaje}")
 
     # 2. Lógica del Mensaje 2: Replanificar Tarea de Ayer
-    # (Busca tareas que quedaron pendientes ayer)
     tareas_pendientes_ayer = Tarea.query.join(Objetivo).join(Usuario).filter(
         Tarea.estado == 'pendiente',
         Tarea.fecha_programada >= ayer_inicio,
@@ -158,18 +151,13 @@ def ejecutar_chequeo_proactivo():
     for tarea in tareas_pendientes_ayer:
         mensaje = generar_mensaje_proactivo(tarea, tarea.objetivo.usuario, 'replanificar')
         mensajes_generados.append(f"[SIMULACIÓN DE ENVÍO] Para {tarea.objetivo.usuario.email}: {mensaje}")
-        # Opcional: Marcarla como 'reprogramada' para no molestar más
-        # tarea.estado = 'reprogramada' 
-        # db.session.commit()
 
     # 3. Lógica del Mensaje 3: Felicitación Semanal
-    # (Busca tareas completadas en los últimos 7 días. Agrupadas por usuario)
     tareas_completadas_semana = Tarea.query.join(Objetivo).join(Usuario).filter(
         Tarea.estado == 'completada',
         Tarea.fecha_programada >= semana_pasada_inicio
     ).all()
     
-    # Agrupar por usuario
     tareas_por_usuario = {}
     for tarea in tareas_completadas_semana:
         uid = tarea.objetivo.usuario_id
@@ -177,7 +165,6 @@ def ejecutar_chequeo_proactivo():
             tareas_por_usuario[uid] = []
         tareas_por_usuario[uid].append(tarea)
 
-    # (Esto solo se enviaría una vez por semana, ej. los domingos. Aquí lo simulamos)
     for uid, lista_tareas in tareas_por_usuario.items():
         if len(lista_tareas) >= 5: # Umbral de felicitación
             usuario = Usuario.query.get(uid)
@@ -193,8 +180,6 @@ def ejecutar_chequeo_proactivo():
 # --- INICIAR LA APP ---
 
 if __name__ == '__main__':
-    # Crea la base de datos y las tablas si no existen
     with app.app_context():
         db.create_all()
-    # Inicia el servidor de Flask
     app.run(debug=True, port=5000)
